@@ -1,0 +1,11 @@
+.build
+.mbed
+projectfiles
+*.py*
+mbed-os
+BUILD
+/.project
+target
+/.sonar_lock
+/.scannerwork
+/report-task.txt
