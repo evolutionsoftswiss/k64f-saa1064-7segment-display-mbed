@@ -1,9 +1,6 @@
+#include <string>
 #include "mbed.h"
 #include "SAA1064.h"
-
-#define NUMBER_OF_DIGITS 4
-#define TEXT_SHIFT_DELAY 1000000
-#define SPACE ' '
 
 SAA1064::SAA1064( PinName sda, PinName scl, uint8_t deviceAddress )
 {
@@ -11,7 +8,6 @@ SAA1064::SAA1064( PinName sda, PinName scl, uint8_t deviceAddress )
     slaveAddress = deviceAddress;
     init();
 }
-
 
 SAA1064::SAA1064( I2C *i2c, uint8_t deviceAddress )
 {
@@ -26,77 +22,104 @@ uint8_t getSegment(char c) {
     return 0x00; // blank for unsupported characters
 }
 
-/** Write digits
-*
-* @param digit1  LED segment pattern for digit1 (MSB)
-* @param digit2  LED segment pattern for digit2
-* @param digit3  LED segment pattern for digit3
-* @param digit4  LED segment pattern for digit4 (LSB)
-*/
-void SAA1064::write( uint8_t digit1, uint8_t digit2, uint8_t digit3, uint8_t digit4 )
+void SAA1064::writeString(string value) {
+
+    int textLength = value.length();
+
+    if (textLength > 0) {
+
+        int scrollPosition = 0;
+        int currentPoints = 0;
+        do {
+            char encodedCharacters[] = { getSegment(value.at(scrollPosition)),
+                                         static_cast<char>(scrollPosition + 1 < textLength ? getSegment(value.at(scrollPosition + 1)) : ENCODED_SPACE),
+                                         static_cast<char>(scrollPosition + 2 < textLength ? getSegment(value.at(scrollPosition + 2)) : ENCODED_SPACE),
+                                         static_cast<char>(scrollPosition + 3 < textLength ? getSegment(value.at(scrollPosition + 3)) : ENCODED_SPACE) };
+            currentPoints = handlePointCharacters(value, encodedCharacters, textLength, scrollPosition);
+
+            write(encodedCharacters[0], encodedCharacters[1], encodedCharacters[2], encodedCharacters[3]);
+            wait_us(TEXT_SHIFT_DELAY);
+            
+            scrollPosition++;
+            if (value[scrollPosition] == POINT && value[scrollPosition - 1] != POINT) {
+                scrollPosition++;
+            
+            } else if ( currentPoints > 0 && scrollPosition + currentPoints + NUMBER_OF_DIGITS > textLength) {
+                scrollPosition++;
+            }
+
+        } while (scrollPosition + NUMBER_OF_DIGITS <= textLength);
+    }
+}
+
+void SAA1064::write(uint8_t encodedChar1, uint8_t encodedChar2, uint8_t encodedChar3, uint8_t encodedChar4)
 {
-    digit1 = getSegment(digit1);
-    digit2 = getSegment(digit2);
-    digit3 = getSegment(digit3);
-    digit4 = getSegment(digit4);
+    arrangeSegmentBitsForI2C(encodedChar1, encodedChar2, encodedChar3, encodedChar4);
+    i2c -> write(slaveAddress, (char*) data, I2C_SEGMENT_WRITE_SIZE);
+}
+
+int SAA1064::handlePointCharacters(string value, char *encodedCharacters, int textLength, int positionInText) {
+          
+    int collapsedPoints = 0;
+    if (value[positionInText + 1] == POINT && 
+        value[positionInText] != POINT) {
+
+        encodedCharacters[0] |= getSegment(POINT);
+        encodedCharacters[1] = encodedCharacters[2];
+        encodedCharacters[2] = encodedCharacters[3];
+        encodedCharacters[3] = getSegment(value[positionInText + NUMBER_OF_DIGITS]);
+        collapsedPoints++;
+     }
+
+    if (value[positionInText + collapsedPoints + 2] == POINT && 
+        value[positionInText + collapsedPoints + 1] != POINT) {
+
+        encodedCharacters[1] |= getSegment(POINT);
+        encodedCharacters[2] = encodedCharacters[3];
+        encodedCharacters[3] = getSegment(value[positionInText + collapsedPoints + NUMBER_OF_DIGITS]);
+        collapsedPoints++;
+    }
+
+    if (value[positionInText + collapsedPoints + 3] == POINT && 
+        value[positionInText + collapsedPoints + 2] != POINT) {
+
+        encodedCharacters[2] |= getSegment(POINT);
+        encodedCharacters[3] = getSegment(value[positionInText + collapsedPoints + NUMBER_OF_DIGITS]);
+        collapsedPoints++;
+    }
+
+    if (textLength > positionInText + NUMBER_OF_DIGITS && 
+        value[positionInText + collapsedPoints + NUMBER_OF_DIGITS] == POINT && 
+        value[positionInText + collapsedPoints + 3] != POINT) {
+ 
+        encodedCharacters[3] = encodedCharacters[3] | getSegment(POINT);
+        collapsedPoints++;
+    }
+
+    return collapsedPoints;
+}
+
+void SAA1064::arrangeSegmentBitsForI2C(uint8_t encodedChar1, uint8_t encodedChar2, uint8_t encodedChar3, uint8_t encodedChar4) {
 
     data[0] = 1;
-    data[1] = ((digit4<<4) & 0xF0) | (digit2 & 0x0F);
-    data[2] = ((digit3<<4) & 0xF0) | (digit1 & 0x0F);
-    data[3] = ((digit2>>4) & 0x0F) | (digit4 & 0xF0);
-    data[4] = ((digit1>>4) & 0x0F) | (digit3 & 0xF0);
-    i2c->write( slaveAddress, (char*) data, 5 );
+    data[1] = ((encodedChar4 << 4) & 0xF0) | (encodedChar2 & 0x0F);
+    data[2] = ((encodedChar3 << 4) & 0xF0) | (encodedChar1 & 0x0F);
+    data[3] = ((encodedChar2 >> 4) & 0x0F) | (encodedChar4 & 0xF0);
+    data[4] = ((encodedChar1 >> 4) & 0x0F) | (encodedChar3 & 0xF0);
 }
 
-void SAA1064::writeString(char const *value) {
-
-    int textLength = strlen(value);
-
-    if (textLength > 0 && textLength <= NUMBER_OF_DIGITS) {
-
-        writeShortString(value);
-    }
-    else if (textLength > 0) {
-
-        int n = 0;
-        do {
-            write(value[n], value[n + 1], value[n + 2], value[n + 3]);
-            wait_us(TEXT_SHIFT_DELAY);
-            n++;
-        } while (n + NUMBER_OF_DIGITS <= textLength);
-    }
-}
-
-  void SAA1064::writeShortString(char const *value) {
-        
-    int textLength = strlen(value);
-    if (textLength == 1) {
-        write(value[0], SPACE, SPACE, SPACE);
-
-    } else if (textLength == 2) {
-        write(value[0], value[1], SPACE, SPACE);
-
-    } else if (textLength == 3) {
-       write(value[0], value[1], value[2], SPACE);
-
-    } else if (textLength == 4) {
-       write(value[0], value[1], value[2], value[3]);
-    }
-}
-/** Init I2C bus 
-*/
 void SAA1064::init( void )
 {
     // init
     data[0] = 0x00;
     data[1] = 0x17;
-    i2c->write( slaveAddress, (char*) data, 2 );
+    i2c->write( slaveAddress, (char*) data, I2C_CONTROL_COMMAND_SIZE );
 
-    // blank display
+    // full display
     data[0] = 1;
-    data[1] = 0;
-    data[2] = 0;
-    data[3] = 0;
-    data[4] = 0;
-    i2c->write( slaveAddress, (char*) data, 5 );
+    data[1] = 0xFF;
+    data[2] = 0xFF;
+    data[3] = 0xFF;
+    data[4] = 0xFF;
+    i2c->write( slaveAddress, (char*) data, I2C_SEGMENT_WRITE_SIZE );
 }
