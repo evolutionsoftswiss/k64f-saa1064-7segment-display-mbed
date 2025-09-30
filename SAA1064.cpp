@@ -37,20 +37,20 @@ void SAA1064::writeString(string value) {
                                          static_cast<char>(scrollPosition + 2 < textLength ? getSegment(value.at(scrollPosition + 2)) : ENCODED_SPACE),
                                          static_cast<char>(scrollPosition + 3 < textLength ? getSegment(value.at(scrollPosition + 3)) : ENCODED_SPACE) };
             currentPoints = handlePointCharacters(value, encodedCharacters, textLength, scrollPosition);
-            totalCollapsedPoints += currentPoints;
             
             write(encodedCharacters[0], encodedCharacters[1], encodedCharacters[2], encodedCharacters[3]);
             wait_us(TEXT_SHIFT_DELAY);
             
             scrollPosition++;
-            if (value[scrollPosition] == POINT && value[scrollPosition - 1] != POINT) {
-  
-                scrollPosition++;     
-            } 
-            if (scrollPosition + NUMBER_OF_DIGITS + totalCollapsedPoints - currentPoints - 1 > textLength) {
+            if (scrollPosition + NUMBER_OF_DIGITS + totalCollapsedPoints + currentPoints - 1 > textLength) {
 
                 break;
             }
+            if (value[scrollPosition] == POINT && value[scrollPosition - 1] != POINT) {
+  
+                scrollPosition++;
+                totalCollapsedPoints++;
+            } 
 
         } while (scrollPosition + NUMBER_OF_DIGITS <= textLength);
     }
