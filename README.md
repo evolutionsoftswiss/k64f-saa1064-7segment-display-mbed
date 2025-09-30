@@ -18,16 +18,14 @@ It has an integrated 4 digit display on address 0x70.
 
 ![Display Demo](https://github.com/evolutionsoftswiss/k64f-saa1064-7segment-display-mbed/blob/master/k64f-saa1064-7segment-display-mbed.gif)
 
-Above you see the running main method.
+Above you see the running main method. The K64F base board under the custom shield is branched with standard USB to supply power and program loading.
 
 Implementation
 --------------
-
 Displaying characters on a 7-segment display requires hardware knowledge and low-level bit manipulation. Each character is represented by **seven segments plus a decimal point**, forming an **8-bit pattern** (1 byte). The SAA1064 uses these patterns to turn individual segments **on or off**. 
 
 
-## Segment Bit Mapping
-
+### Segment Bit Mapping
 Below is a typical 7-segment layout and the corresponding bit numbering used in the `SEGMENT_MAP`:
 
 ```
@@ -47,8 +45,8 @@ Below is a typical 7-segment layout and the corresponding bit numbering used in 
 | c       | 2            |
 | d       | 1            |
 | e       | 0            |
-| f       | 4            |
-| g       | 5            |
+| f       | 5            |
+| g       | 4            |
 | dp      | 3            |
 
 Example: To display `0` with no decimal point:  
@@ -61,8 +59,7 @@ This turns a, b, c, d, e, f ON, g AND dp OFF.
 ```cpp
 SEGMENT_MAP['0'] | 0x08 // turns on decimal point
 ```
-## Adapting to Different Hardware
-
+### Adapting to Different Hardware
 Different displays may use a different segment-to-bit wiring, so the patterns in SEGMENT_MAP might not work out-of-the-box. To adapt:
 
    * Identify which bit controls which segment on your hardware.
@@ -70,7 +67,6 @@ Different displays may use a different segment-to-bit wiring, so the patterns in
    * Initialize SAA1064 object with pins and address from your hardware:
 
 ```cpp
-SAA1064( PinName sda = D14, PinName scl = D15, uint8_t deviceAddress = SAA1064_SA0 );
+SAA1064(PinName sda = D14, PinName scl = D15, uint8_t deviceAddress = SAA1064_SA0 );
 ```
-
 
