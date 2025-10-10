@@ -14,8 +14,7 @@
 #define SPACE ' '
 #define ENCODED_SPACE 0x00
 #define POINT '.'
-// One second in microseconds
-#define TEXT_SHIFT_DELAY 1000000
+#define TEXT_SHIFT_DELAY 1s
 
 const std::unordered_map<char, uint8_t> SEGMENT_MAP = {
     // Digits

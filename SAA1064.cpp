@@ -1,4 +1,5 @@
 #include <string>
+#include "ThisThread.h"
 #include "mbed.h"
 #include "SAA1064.h"
 
@@ -11,14 +12,14 @@ SAA1064::SAA1064(PinName sda, PinName scl, uint8_t deviceAddress)
 
 SAA1064::SAA1064(I2C *i2c, uint8_t deviceAddress)
 {
-    this->i2c = i2c;
+    this -> i2c = i2c;
     slaveAddress = deviceAddress;
     init();
 }
 
 uint8_t getSegment(char c) {
     auto it = SEGMENT_MAP.find(c);
-    if (it != SEGMENT_MAP.end()) return it->second;
+    if (it != SEGMENT_MAP.end()) return it -> second;
     return ENCODED_SPACE; // blank for unsupported characters
 }
 
@@ -39,7 +40,7 @@ void SAA1064::writeString(string value) {
             currentPoints = handlePointCharacters(value, encodedCharacters, textLength, scrollPosition);
             
             write(encodedCharacters[0], encodedCharacters[1], encodedCharacters[2], encodedCharacters[3]);
-            wait_us(TEXT_SHIFT_DELAY);
+            ThisThread::sleep_for(TEXT_SHIFT_DELAY);
             
             scrollPosition++;
             if (scrollPosition + NUMBER_OF_DIGITS + totalCollapsedPoints + currentPoints - 1 > textLength) {
