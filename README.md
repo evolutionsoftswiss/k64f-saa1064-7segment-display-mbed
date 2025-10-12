@@ -1,5 +1,5 @@
-Display characters on SAA1064 7Segment custom shield on K64F
-============================================================
+Display Characters on SAA1064 7-Segment Custom Shield with K64F
+===============================================================
 
 Features
 --------
