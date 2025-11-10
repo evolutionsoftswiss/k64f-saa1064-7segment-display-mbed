@@ -1,20 +1,24 @@
 Display Characters on SAA1064 7-Segment Custom Shield with K64F
 ===============================================================
 
+This repository uses mbed, you may also look at the similar [MCUXpresso](https://github.com/evolutionsoftswiss/k64f-saa1064-7segment-display-mcu).
+
 Features
 --------
 * Displays common characters and decimal point numbers on 4 digit 7-segment LEDs.
 * Supports longer strings with scrolling display.
 * Can be used on other 7-segment setups supporting i2c Inter-Integrated Circuit communication * 
 
-\* Most probably only with adapting the encoded character constants in the source code. See [Implementation](#Implementation) .
+\* Most probably only with adapting the encoded character constants in the source code. See [Implementation](#Implementation).
+
+There is a binary Release that can be used for K64F Boards with a display at 8bit address 0x70.
 
 Board Setup
 -----------
 The package from the internet of things course during CH Open 2015 is very good to experiment with different sensors and other peripherals.
 [CH Open 2015 Custom Shield](https://os.mbed.com/users/marcel1691/notebook/internet-of-things-kit-iotkit-smd-shield/).
 
-It has an integrated 4 digit display on address 0x70.
+It has an integrated 4 digit display on 8bit address 0x70.
 
 ![Display Demo](https://github.com/evolutionsoftswiss/k64f-saa1064-7segment-display-mbed/blob/master/k64f-saa1064-7segment-display-mbed.gif)
 
